@@ -1,0 +1,206 @@
+:root {
+  /* Warm Modern / Editorial Productivity Color Palette */
+  --bg-canvas: #FAF8F5;
+  --bg-surface: #FFFFFF;
+  --bg-surface-elevated: #F5F3EF;
+  --bg-surface-active: #EFECE6;
+
+  --text-primary: #1C1917;
+  --text-secondary: #57534E;
+  --text-muted: #8F8A83;
+  --text-inverse: #FFFFFF;
+
+  --accent-terracotta: #C25E3E;
+  --accent-terracotta-hover: #AA4E31;
+  --accent-terracotta-subtle: #FDF3EFE;
+  --accent-terracotta-glow: rgba(194, 94, 62, 0.12);
+
+  --border-subtle: #E7E5E4;
+  --border-medium: #D6D3D1;
+  --border-strong: #A8A29E;
+
+  /* Muted Semantic Colors */
+  --state-not-started: #78716C;
+  --state-not-started-bg: #F5F5F4;
+  --state-learning: #D97706;
+  --state-learning-bg: #FEF3C7;
+  --state-assessed: #0284C7;
+  --state-assessed-bg: #E0F2FE;
+  --state-retained: #15803D;
+  --state-retained-bg: #DCFCE7;
+  --state-mastered: #4D7C0F;
+  --state-mastered-bg: #ECFCCB;
+  --state-decay: #DC2626;
+  --state-decay-bg: #FEE2E2;
+
+  /* Typography */
+  --font-heading: 'Manrope', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-body: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-mono: 'JetBrains Mono', 'Fira Code', Menlo, monospace;
+
+  /* Elevation Shadows (Restrained & Calm) */
+  --shadow-sm: 0 1px 2px rgba(28, 25, 23, 0.04);
+  --shadow-md: 0 4px 12px rgba(28, 25, 23, 0.05), 0 1px 3px rgba(28, 25, 23, 0.03);
+  --shadow-lg: 0 10px 24px rgba(28, 25, 23, 0.06), 0 2px 6px rgba(28, 25, 23, 0.04);
+
+  /* Radii */
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 14px;
+  --radius-pill: 9999px;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  background-color: var(--bg-canvas);
+  color: var(--text-primary);
+  font-family: var(--font-body);
+  font-size: 15px;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-heading);
+  color: var(--text-primary);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+code, pre {
+  font-family: var(--font-mono);
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+button {
+  cursor: pointer;
+  border: none;
+  font-family: inherit;
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--border-medium);
+  border-radius: var(--radius-pill);
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--text-muted);
+}
+
+/* Base Utility Classes */
+.card {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  padding: 24px;
+  box-shadow: var(--shadow-sm);
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.card:hover {
+  border-color: var(--border-medium);
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 8px 16px;
+  border-radius: var(--radius-sm);
+  font-size: 14px;
+  font-weight: 600;
+  transition: all 0.15s ease;
+}
+
+.btn-primary {
+  background: var(--accent-terracotta);
+  color: var(--text-inverse);
+}
+.btn-primary:hover {
+  background: var(--accent-terracotta-hover);
+}
+
+.btn-secondary {
+  background: var(--bg-surface-elevated);
+  color: var(--text-primary);
+  border: 1px solid var(--border-subtle);
+}
+.btn-secondary:hover {
+  background: var(--bg-surface-active);
+  border-color: var(--border-medium);
+}
+
+.btn-outline {
+  background: transparent;
+  color: var(--text-secondary);
+  border: 1px solid var(--border-subtle);
+}
+.btn-outline:hover {
+  background: var(--bg-surface-elevated);
+  color: var(--text-primary);
+}
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 8px;
+  border-radius: var(--radius-pill);
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.badge-NOT_STARTED {
+  background: var(--state-not-started-bg);
+  color: var(--state-not-started);
+}
+.badge-LEARNING {
+  background: var(--state-learning-bg);
+  color: var(--state-learning);
+}
+.badge-ASSESSED {
+  background: var(--state-assessed-bg);
+  color: var(--state-assessed);
+}
+.badge-RETAINED {
+  background: var(--state-retained-bg);
+  color: var(--state-retained);
+}
+.badge-MASTERED {
+  background: var(--state-mastered-bg);
+  color: var(--state-mastered);
+}
+
+.progress-bar-bg {
+  background: var(--border-subtle);
+  border-radius: var(--radius-pill);
+  height: 6px;
+  overflow: hidden;
+  width: 100%;
+}
+.progress-bar-fill {
+  background: var(--accent-terracotta);
+  height: 100%;
+  border-radius: var(--radius-pill);
+  transition: width 0.4s ease;
+}
