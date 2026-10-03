@@ -103,23 +103,9 @@ authRouter.get('/me', authMiddleware, async (req: Request, res: Response, next: 
   try {
     const user = await User.findById(req.user?.id).select('-passwordHash -refreshTokenHash');
     if (!user) {
-      // In dev mode, return fallback dev user
-      return res.json({
-        success: true,
-        data: {
-          user: {
-            id: req.user?.id,
-            email: req.user?.email,
-            name: 'StudyOS Architect',
-            timezone: req.user?.timezone || 'Asia/Kolkata',
-            preferences: {
-              quietHours: { start: '22:00', end: '07:30' },
-              notifications: { email: true, telegram: false, webPush: true },
-              spacedAlgorithm: 'RULE_2_4_7',
-              missedBlockStrategy: 'PROMPT',
-            },
-          },
-        },
+      return res.status(404).json({
+        success: false,
+        error: { code: 'USER_NOT_FOUND', message: 'User profile not found.' },
       });
     }
 

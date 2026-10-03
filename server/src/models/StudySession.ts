@@ -7,7 +7,11 @@ export interface IStudySession extends Document {
   endTime?: Date;
   durationMinutes: number;
   activeFocusMinutes: number;
+  verifiedActiveSeconds: number;
   heartbeatsLogged: number;
+  lastHeartbeatAt: Date;
+  status: 'ACTIVE' | 'COMPLETED' | 'ABANDONED';
+  maxDurationMinutes: number;
   sessionNotes?: string;
   wasPlanned: boolean;
   timetableBlockId?: Types.ObjectId;
@@ -23,7 +27,16 @@ const StudySessionSchema = new Schema<IStudySession>(
     endTime: { type: Date },
     durationMinutes: { type: Number, default: 0 },
     activeFocusMinutes: { type: Number, default: 0 },
+    verifiedActiveSeconds: { type: Number, default: 0 },
     heartbeatsLogged: { type: Number, default: 0 },
+    lastHeartbeatAt: { type: Date, default: Date.now },
+    status: {
+      type: String,
+      enum: ['ACTIVE', 'COMPLETED', 'ABANDONED'],
+      default: 'ACTIVE',
+      index: true,
+    },
+    maxDurationMinutes: { type: Number, default: 240 },
     sessionNotes: { type: String, default: '' },
     wasPlanned: { type: Boolean, default: false },
     timetableBlockId: { type: Schema.Types.ObjectId, ref: 'ScheduledStudyBlock', default: null },

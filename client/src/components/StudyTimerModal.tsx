@@ -21,6 +21,8 @@ export const StudyTimerModal: React.FC<StudyTimerModalProps> = ({
   const [loading, setLoading] = useState<boolean>(false);
   const [notes, setNotes] = useState<string>('');
 
+  const [isTabVisible, setIsTabVisible] = useState<boolean>(!document.hidden);
+
   // 1. Initialize session on backend
   useEffect(() => {
     let mounted = true;
@@ -33,10 +35,21 @@ export const StudyTimerModal: React.FC<StudyTimerModalProps> = ({
     };
   }, [topicId]);
 
-  // 2. Local Timer & 60s Heartbeat
+  // Tab visibility listener: pause activity when user switches tabs or minimizes
+  useEffect(() => {
+    const handleVisibility = () => {
+      setIsTabVisible(!document.hidden);
+    };
+    document.addEventListener('visibilitychange', handleVisibility);
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibility);
+    };
+  }, []);
+
+  // 2. Local Timer & 60s Heartbeat (Only active when foreground tab is visible)
   useEffect(() => {
     let interval: any = null;
-    if (isActive) {
+    if (isActive && isTabVisible) {
       interval = setInterval(() => {
         setSeconds((s) => {
           const nextSec = s + 1;
@@ -49,7 +62,7 @@ export const StudyTimerModal: React.FC<StudyTimerModalProps> = ({
       }, 1000);
     }
     return () => clearInterval(interval);
-  }, [isActive, sessionId]);
+  }, [isActive, isTabVisible, sessionId]);
 
   const formatTime = (totalSeconds: number) => {
     const mins = Math.floor(totalSeconds / 60);
@@ -142,7 +155,11 @@ export const StudyTimerModal: React.FC<StudyTimerModalProps> = ({
             {formatTime(seconds)}
           </div>
           <div style={{ fontSize: '13px', color: 'var(--text-muted)', marginTop: '4px' }}>
-            {isActive ? 'Heartbeat verified active focus' : 'Session paused'}
+            {isActive
+              ? isTabVisible
+                ? 'Verified active session time'
+                : 'Session paused (tab hidden)'
+              : 'Session paused'}
           </div>
         </div>
 

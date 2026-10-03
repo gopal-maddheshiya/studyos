@@ -1,5 +1,6 @@
 import { Router, Request, Response, NextFunction } from 'express';
-import { Quiz, QuizSubmission } from '../models/Quiz.js';
+import rateLimit from 'express-rate-limit';
+import { Quiz, QuizSubmission, IPublicQuiz, IPublicQuestion } from '../models/Quiz.js';
 import { Topic } from '../models/Topic.js';
 import { ConceptLab } from '../models/ConceptLab.js';
 import { Mistake } from '../models/Mistake.js';
@@ -13,8 +14,23 @@ export const quizRouter = Router();
 
 quizRouter.use(authMiddleware);
 
-// Generate Quiz for Topic
-quizRouter.post('/generate', async (req: Request, res: Response, next: NextFunction) => {
+// Rate limiter for quiz generation (protect against cost and spam)
+const quizGenerationLimiter = rateLimit({
+  windowMs: 10 * 60 * 1000,
+  max: 5,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: {
+    success: false,
+    error: {
+      code: 'RATE_LIMIT_EXCEEDED',
+      message: 'Too many quiz generation requests. Please try again later.',
+    },
+  },
+});
+
+// Generate Quiz for Topic (Sanitized response: browser NEVER receives correctAnswer or explanation)
+quizRouter.post('/generate', quizGenerationLimiter, async (req: Request, res: Response, next: NextFunction) => {
   try {
     const userId = req.user!.id;
     const { topicId, difficulty } = req.body;
@@ -48,19 +64,43 @@ quizRouter.post('/generate', async (req: Request, res: Response, next: NextFunct
       questions,
     });
 
-    res.status(201).json({ success: true, data: { quiz } });
+    // Project to sanitized public representation: strictly exclude correctAnswer, explanation, distractorExplanations
+    const sanitizedQuiz: IPublicQuiz = {
+      _id: quiz._id.toString(),
+      topicId: quiz.topicId.toString(),
+      difficulty: quiz.difficulty,
+      questions: quiz.questions.map((q): IPublicQuestion => ({
+        questionId: q.questionId,
+        type: q.type,
+        prompt: q.prompt,
+        codeSnippet: q.codeSnippet,
+        options: q.options,
+        difficulty: q.difficulty,
+      })),
+      createdAt: quiz.createdAt,
+    };
+
+    res.status(201).json({ success: true, data: { quiz: sanitizedQuiz } });
   } catch (err) {
     next(err);
   }
 });
 
-// Submit Quiz Answers & Ingest Evidence
+// Submit Quiz Answers & Ingest Evidence (Scored server-side, reveals explanations only post-submission)
 quizRouter.post('/:id/submit', async (req: Request, res: Response, next: NextFunction) => {
   try {
     const userId = req.user!.id;
     const quizId = req.params.id;
     const { answers } = req.body; // Array of { questionId, userAnswer, timeSpentSeconds }
 
+    if (!Array.isArray(answers)) {
+      return res.status(400).json({
+        success: false,
+        error: { code: 'VALIDATION_ERROR', message: 'Answers payload must be an array.' },
+      });
+    }
+
+    // Verify ownership and existence
     const quiz = await Quiz.findOne({ _id: quizId, userId });
     if (!quiz) {
       return res.status(404).json({
@@ -69,8 +109,23 @@ quizRouter.post('/:id/submit', async (req: Request, res: Response, next: NextFun
       });
     }
 
+    // Verify all submitted question IDs belong to this quiz
+    const validQuestionIds = new Set(quiz.questions.map((q) => q.questionId));
+    for (const ans of answers) {
+      if (!ans || !ans.questionId || !validQuestionIds.has(ans.questionId)) {
+        return res.status(400).json({
+          success: false,
+          error: {
+            code: 'INVALID_QUESTION_ID',
+            message: `Submitted questionId "${ans?.questionId}" does not belong to this quiz.`,
+          },
+        });
+      }
+    }
+
     let correctCount = 0;
     const evaluatedAnswers: any[] = [];
+    const evaluations: any[] = [];
     const newMistakes: any[] = [];
 
     for (const q of quiz.questions) {
@@ -107,6 +162,16 @@ quizRouter.post('/:id/submit', async (req: Request, res: Response, next: NextFun
         userAnswer: userAns ? userAns.userAnswer : '',
         isCorrect,
         timeSpentSeconds: userAns ? userAns.timeSpentSeconds : 0,
+      });
+
+      // Educational evaluation data returned ONLY post-submission
+      evaluations.push({
+        questionId: q.questionId,
+        userAnswer: userAns ? userAns.userAnswer : '',
+        isCorrect,
+        correctAnswer: q.correctAnswer,
+        explanation: q.explanation,
+        distractorExplanations: q.distractorExplanations,
       });
     }
 
@@ -175,6 +240,7 @@ quizRouter.post('/:id/submit', async (req: Request, res: Response, next: NextFun
       success: true,
       data: {
         submission,
+        evaluations,
         scorePercentage,
         correctCount,
         totalQuestions: quiz.questions.length,

@@ -28,17 +28,6 @@ export function authMiddleware(req: Request, res: Response, next: NextFunction):
   }
 
   if (!token) {
-    // In development mode, provide a deterministic local test user if no token is present
-    if (env.NODE_ENV === 'development') {
-      req.user = {
-        id: '670000000000000000000001',
-        email: 'dev@studyos.local',
-        roles: ['USER'],
-        timezone: 'Asia/Kolkata',
-      };
-      return next();
-    }
-
     res.status(401).json({
       success: false,
       error: {
@@ -54,12 +43,13 @@ export function authMiddleware(req: Request, res: Response, next: NextFunction):
     const decoded = jwt.verify(token, env.JWT_SECRET) as AuthUser;
     req.user = decoded;
     next();
-  } catch (error) {
+  } catch (error: any) {
+    const isExpired = error?.name === 'TokenExpiredError';
     res.status(401).json({
       success: false,
       error: {
-        code: 'INVALID_TOKEN',
-        message: 'Token is expired or invalid.',
+        code: isExpired ? 'EXPIRED_TOKEN' : 'INVALID_TOKEN',
+        message: isExpired ? 'Token has expired.' : 'Token is invalid.',
         timestamp: new Date().toISOString(),
       },
     });

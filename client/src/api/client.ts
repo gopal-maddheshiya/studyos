@@ -1,4 +1,4 @@
-import type { ISubject, ITopic, IConceptLab, IQuiz, IRevisionSchedule, IScheduledStudyBlock, IMistake } from './types.js';
+import type { ISubject, ITopic, IConceptLab, IQuiz, IRevisionSchedule, IScheduledStudyBlock, IMistake, IEvaluatedAnswer } from './types.js';
 
 const API_BASE = 'http://localhost:5001/api/v1';
 
@@ -108,6 +108,7 @@ export const api = {
       topicStatus: string;
       masteryScore: number;
       scheduledRevision?: any;
+      evaluations?: IEvaluatedAnswer[];
     }>(`/quizzes/${quizId}/submit`, {
       method: 'POST',
       body: JSON.stringify({ answers }),

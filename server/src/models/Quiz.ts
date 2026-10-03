@@ -14,6 +14,23 @@ export interface IQuestion {
   difficulty: 'EASY' | 'MEDIUM' | 'HARD';
 }
 
+export interface IPublicQuestion {
+  questionId: string;
+  type: QuestionType;
+  prompt: string;
+  codeSnippet?: string;
+  options?: string[];
+  difficulty: 'EASY' | 'MEDIUM' | 'HARD';
+}
+
+export interface IPublicQuiz {
+  _id: string;
+  topicId: string;
+  difficulty: 'EASY' | 'MEDIUM' | 'HARD';
+  questions: IPublicQuestion[];
+  createdAt: Date;
+}
+
 export interface IQuiz extends Document {
   userId: Types.ObjectId;
   topicId: Types.ObjectId;

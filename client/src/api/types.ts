@@ -54,10 +54,20 @@ export interface IQuestion {
   prompt: string;
   codeSnippet?: string;
   options?: string[];
+  difficulty: 'EASY' | 'MEDIUM' | 'HARD';
+  // Educational data available strictly post-submission:
+  correctAnswer?: string;
+  explanation?: string;
+  distractorExplanations?: Record<string, string>;
+}
+
+export interface IEvaluatedAnswer {
+  questionId: string;
+  userAnswer: string;
+  isCorrect: boolean;
   correctAnswer: string;
   explanation: string;
   distractorExplanations?: Record<string, string>;
-  difficulty: 'EASY' | 'MEDIUM' | 'HARD';
 }
 
 export interface IQuiz {
