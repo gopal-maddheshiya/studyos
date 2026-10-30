@@ -14,7 +14,6 @@ export interface IUser extends Document {
     missedBlockStrategy: 'PROMPT' | 'AUTO_PUSH';
   };
   telegramChatId?: string;
-  refreshTokenHash?: string;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -41,7 +40,6 @@ const UserSchema = new Schema<IUser>(
       missedBlockStrategy: { type: String, enum: ['PROMPT', 'AUTO_PUSH'], default: 'PROMPT' },
     },
     telegramChatId: { type: String },
-    refreshTokenHash: { type: String },
   },
   { timestamps: true }
 );

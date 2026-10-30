@@ -220,7 +220,14 @@ quizRouter.post('/:id/submit', async (req: Request, res: Response, next: NextFun
 
         // If promoted to ASSESSED for the first time, automatically schedule Revision 1 (+2 days)
         if (evidence.newStatus === 'ASSESSED' && !topic.nextRevisionDueDate) {
-          const scheduleResult = defaultRevisionEngine.calculateNextSchedule(0, topic.stabilityDays, scorePercentage);
+          const scheduleResult = defaultRevisionEngine.calculateNextSchedule(
+            0,
+            0,
+            topic.stabilityDays,
+            true,
+            3,
+            req.user?.timezone || 'Asia/Kolkata'
+          );
           topic.nextRevisionDueDate = scheduleResult.nextScheduledDate;
 
           scheduledRevision = await RevisionSchedule.create({

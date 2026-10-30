@@ -1,5 +1,6 @@
 import { Router, Request, Response, NextFunction } from 'express';
 import { Mistake } from '../models/Mistake.js';
+import { Topic } from '../models/Topic.js';
 import { authMiddleware } from '../middlewares/auth.js';
 
 export const mistakeRouter = Router();
@@ -54,6 +55,15 @@ mistakeRouter.post('/', async (req: Request, res: Response, next: NextFunction) 
       return res.status(400).json({
         success: false,
         error: { code: 'VALIDATION_ERROR', message: 'Missing required mistake fields.' },
+      });
+    }
+
+    // Verify target topic exists and belongs to authenticated user
+    const topic = await Topic.findOne({ _id: topicId, userId });
+    if (!topic) {
+      return res.status(404).json({
+        success: false,
+        error: { code: 'TOPIC_NOT_FOUND', message: 'Topic not found.' },
       });
     }
 

@@ -1,8 +1,41 @@
-import type { ISubject, ITopic, IConceptLab, IQuiz, IRevisionSchedule, IScheduledStudyBlock, IMistake, IEvaluatedAnswer } from './types.js';
+import type {
+  ISubject,
+  ITopic,
+  IConceptLab,
+  IQuiz,
+  IRevisionSchedule,
+  IScheduledStudyBlock,
+  IMistake,
+  IEvaluatedAnswer,
+  IRevisionDiagnosticResponse,
+  IRevisionSubmitResponse,
+  IDiagnosticAnswerSubmission,
+} from './types.js';
 
 const API_BASE = 'http://localhost:5001/api/v1';
 
-async function fetchJson<T>(url: string, options?: RequestInit): Promise<T> {
+let refreshPromise: Promise<boolean> | null = null;
+
+async function doRefresh(): Promise<boolean> {
+  if (!refreshPromise) {
+    refreshPromise = (async () => {
+      try {
+        const res = await fetch(`${API_BASE}/auth/refresh`, {
+          method: 'POST',
+          credentials: 'include',
+        });
+        return res.ok;
+      } catch {
+        return false;
+      } finally {
+        refreshPromise = null;
+      }
+    })();
+  }
+  return refreshPromise;
+}
+
+async function fetchJson<T>(url: string, options?: RequestInit, isRetry = false): Promise<T> {
   const res = await fetch(`${API_BASE}${url}`, {
     ...options,
     headers: {
@@ -11,6 +44,13 @@ async function fetchJson<T>(url: string, options?: RequestInit): Promise<T> {
     },
     credentials: 'include',
   });
+
+  if (res.status === 401 && !isRetry && !url.startsWith('/auth/')) {
+    const refreshed = await doRefresh();
+    if (refreshed) {
+      return fetchJson<T>(url, options, true);
+    }
+  }
 
   if (!res.ok) {
     const errorData = await res.json().catch(() => ({}));
@@ -22,6 +62,22 @@ async function fetchJson<T>(url: string, options?: RequestInit): Promise<T> {
 }
 
 export const api = {
+  // Auth
+  login: async (email: string, password: string) => {
+    return fetchJson<{ user: any }>('/auth/login', {
+      method: 'POST',
+      body: JSON.stringify({ email, password }),
+    });
+  },
+
+  logout: async () => {
+    return fetchJson<{ message: string }>('/auth/logout', { method: 'POST' });
+  },
+
+  refresh: async () => {
+    return fetchJson<{ message: string }>('/auth/refresh', { method: 'POST' });
+  },
+
   // Seed demo data
   seedStarterData: async () => {
     return fetchJson<{ message: string }>('/seed/starter-data', { method: 'POST' });
@@ -120,14 +176,18 @@ export const api = {
     return fetchJson<{ revisions: IRevisionSchedule[]; count: number }>('/revisions/due');
   },
 
-  submitRevision: async (revisionId: string, performanceScore: number, recallRating: number) => {
-    return fetchJson<{
-      topicStatus: string;
-      masteryScore: number;
-      nextIntervalDays: number;
-    }>(`/revisions/${revisionId}/submit`, {
+  getRevisionDiagnostic: async (revisionId: string) => {
+    return fetchJson<IRevisionDiagnosticResponse>(`/revisions/${revisionId}/diagnostic`);
+  },
+
+  submitRevision: async (
+    revisionId: string,
+    answers: IDiagnosticAnswerSubmission[],
+    recallRating?: number
+  ) => {
+    return fetchJson<IRevisionSubmitResponse>(`/revisions/${revisionId}/submit`, {
       method: 'POST',
-      body: JSON.stringify({ performanceScore, recallRating }),
+      body: JSON.stringify({ answers, recallRating }),
     });
   },
 

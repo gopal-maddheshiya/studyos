@@ -7,7 +7,8 @@
     "dev": "tsx watch src/index.ts",
     "build": "tsc",
     "start": "node dist/index.js",
-    "test:security": "tsx src/tests/securityHardening.test.ts"
+    "test:security": "tsx src/tests/securityHardening.test.ts",
+    "test:group1": "tsx src/tests/group1Hardening.test.ts"
   },
   "keywords": ["studyos", "learning", "spaced-repetition", "adaptive-scheduling"],
   "author": "StudyOS Team",

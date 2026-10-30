@@ -11,6 +11,7 @@ const envSchema = z.object({
   JWT_EXPIRES_IN: z.string().default('15m'),
   REFRESH_TOKEN_SECRET: z.string().default('studyos_super_secret_refresh_token_for_dev'),
   REFRESH_TOKEN_EXPIRES_IN: z.string().default('30d'),
+  AUTH_REFRESH_GRACE_SECONDS: z.coerce.number().default(15),
   CLIENT_ORIGIN: z.string().default('http://localhost:5173'),
   OPENAI_API_KEY: z.string().optional(),
   REDIS_URL: z.string().default('redis://localhost:6379'),

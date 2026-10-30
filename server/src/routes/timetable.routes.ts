@@ -2,6 +2,7 @@ import { Router, Request, Response, NextFunction } from 'express';
 import { TimetableRoutine } from '../models/TimetableRoutine.js';
 import { ScheduledStudyBlock } from '../models/ScheduledStudyBlock.js';
 import { Topic } from '../models/Topic.js';
+import { Subject } from '../models/Subject.js';
 import { RevisionSchedule } from '../models/RevisionSchedule.js';
 import { authMiddleware } from '../middlewares/auth.js';
 
@@ -86,6 +87,24 @@ timetableRouter.put('/routines/:dayOfWeek', async (req: Request, res: Response, 
     const userId = req.user!.id;
     const dayOfWeek = Number(req.params.dayOfWeek);
     const { blocks } = req.body;
+
+    // Verify all referenced targetSubjectIds belong to authenticated user
+    if (Array.isArray(blocks)) {
+      const subjectIds = blocks.map((b: any) => b.targetSubjectId).filter(Boolean);
+      if (subjectIds.length > 0) {
+        const uniqueSubjectIds = [...new Set(subjectIds)];
+        const ownedCount = await Subject.countDocuments({ _id: { $in: uniqueSubjectIds }, userId });
+        if (ownedCount !== uniqueSubjectIds.length) {
+          return res.status(404).json({
+            success: false,
+            error: {
+              code: 'SUBJECT_NOT_FOUND',
+              message: 'One or more referenced subjects do not exist.',
+            },
+          });
+        }
+      }
+    }
 
     const routine = await TimetableRoutine.findOneAndUpdate(
       { userId, dayOfWeek },
@@ -206,19 +225,26 @@ timetableRouter.patch('/blocks/:id', async (req: Request, res: Response, next: N
   try {
     const userId = req.user!.id;
     const blockId = req.params.id;
-    const { status, rescheduledToDate, activeFocusMinutes } = req.body;
+    const { status, rescheduledToDate } = req.body;
 
+    // Client is strictly forbidden from manually manipulating study durations
     const block = await ScheduledStudyBlock.findOneAndUpdate(
       { _id: blockId, userId },
       {
         $set: {
           ...(status && { status }),
           ...(rescheduledToDate && { rescheduledToDate }),
-          ...(activeFocusMinutes !== undefined && { activeFocusMinutes }),
         },
       },
       { new: true }
     );
+
+    if (!block) {
+      return res.status(404).json({
+        success: false,
+        error: { code: 'STUDY_BLOCK_NOT_FOUND', message: 'Scheduled study block not found.' },
+      });
+    }
 
     res.json({ success: true, data: { block } });
   } catch (err) {

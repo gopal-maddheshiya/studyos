@@ -1,5 +1,6 @@
 import { Router, Request, Response, NextFunction } from 'express';
 import { Topic } from '../models/Topic.js';
+import { Subject } from '../models/Subject.js';
 import { ConceptLab } from '../models/ConceptLab.js';
 import { Mistake } from '../models/Mistake.js';
 import { authMiddleware } from '../middlewares/auth.js';
@@ -20,6 +21,26 @@ topicRouter.post('/', async (req: Request, res: Response, next: NextFunction) =>
         success: false,
         error: { code: 'VALIDATION_ERROR', message: 'Subject ID and topic name are required.' },
       });
+    }
+
+    // 1. Verify parent Subject exists and belongs to authenticated user
+    const subject = await Subject.findOne({ _id: subjectId, userId });
+    if (!subject) {
+      return res.status(404).json({
+        success: false,
+        error: { code: 'SUBJECT_NOT_FOUND', message: 'Subject not found.' },
+      });
+    }
+
+    // 2. If parentTopicId supplied, verify it belongs to user and the same subject
+    if (parentTopicId) {
+      const parentTopic = await Topic.findOne({ _id: parentTopicId, userId, subjectId });
+      if (!parentTopic) {
+        return res.status(404).json({
+          success: false,
+          error: { code: 'PARENT_TOPIC_NOT_FOUND', message: 'Parent topic not found in this subject.' },
+        });
+      }
     }
 
     const slug = name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)+/g, '');
@@ -118,8 +139,17 @@ topicRouter.put('/:id/lab', async (req: Request, res: Response, next: NextFuncti
     const topicId = req.params.id;
     const { intuition, complexity, codeSnippets, personalNotes, tags } = req.body;
 
+    // Verify target topic exists and belongs to authenticated user
+    const topic = await Topic.findOne({ _id: topicId, userId });
+    if (!topic) {
+      return res.status(404).json({
+        success: false,
+        error: { code: 'TOPIC_NOT_FOUND', message: 'Topic not found.' },
+      });
+    }
+
     const updated = await ConceptLab.findOneAndUpdate(
-      { topicId, userId },
+      { topicId: topic._id, userId },
       {
         $set: {
           ...(intuition !== undefined && { intuition }),

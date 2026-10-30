@@ -2,6 +2,7 @@ import { Router, Request, Response, NextFunction } from 'express';
 import rateLimit from 'express-rate-limit';
 import { StudySession } from '../models/StudySession.js';
 import { Topic } from '../models/Topic.js';
+import { ScheduledStudyBlock } from '../models/ScheduledStudyBlock.js';
 import { authMiddleware } from '../middlewares/auth.js';
 import { calculateTopicMastery } from '../services/evidenceScoring.js';
 
@@ -41,6 +42,26 @@ sessionRouter.post('/start', async (req: Request, res: Response, next: NextFunct
         success: false,
         error: { code: 'VALIDATION_ERROR', message: 'Topic ID is required to start a session.' },
       });
+    }
+
+    // 1. Verify Topic belongs to authenticated user
+    const topic = await Topic.findOne({ _id: topicId, userId });
+    if (!topic) {
+      return res.status(404).json({
+        success: false,
+        error: { code: 'TOPIC_NOT_FOUND', message: 'Topic not found.' },
+      });
+    }
+
+    // 2. If timetableBlockId supplied, verify it belongs to authenticated user
+    if (timetableBlockId) {
+      const block = await ScheduledStudyBlock.findOne({ _id: timetableBlockId, userId });
+      if (!block) {
+        return res.status(404).json({
+          success: false,
+          error: { code: 'STUDY_BLOCK_NOT_FOUND', message: 'Scheduled study block not found.' },
+        });
+      }
     }
 
     const now = new Date();
